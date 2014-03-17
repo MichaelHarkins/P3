@@ -6,6 +6,7 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 
 public class RCState {
+private int cost;
 private List<String> state = new LinkedList<String>();
 
 public RCState(List<String> state){
@@ -130,6 +131,8 @@ public boolean GoNear(String peasant, String unit){
 	if(Peasant(peasant)){
 	int index = -1;
 	for(String s: state){
+		if(s.equalsIgnoreCase("Near(" + unit + "," + peasant + ")"))
+			return false;
 		if(s.contains("Near("))
 			index = state.indexOf(s);
 	}
