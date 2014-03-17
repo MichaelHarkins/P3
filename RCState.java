@@ -6,15 +6,65 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 
 public class RCState {
-private int cost;
+private int gCost;
+public int getgCost() {
+	return gCost;
+}
+
+public void setgCost(int gCost) {
+	this.gCost = gCost;
+}
+
+public int getfCost() {
+	return fCost;
+}
+
+public void setfCost(int fCost) {
+	this.fCost = fCost;
+}
+
+public int gethCost() {
+	return hCost;
+}
+
+public void sethCost(int hCost) {
+	this.hCost = hCost;
+}
+
+public List<RCState> getNeighbors() {
+	return neighbors;
+}
+
+public void setNeighbors(List<RCState> neighbors) {
+	this.neighbors = neighbors;
+}
+
+public List<String> getState() {
+	return state;
+}
+
+public void setState(List<String> state) {
+	this.state = state;
+}
+private int fCost;
+private int hCost;
+
+private List<RCState> neighbors = new LinkedList<RCState>();
 private List<String> state = new LinkedList<String>();
 
-public RCState(List<String> state){
+public RCState(List<String> state, int gCost, int hCost){
 	for(String s: state){
 		state.add(s);
 	}
+	this.gCost = gCost;
+	this.hCost = hCost;
+	fCost = gCost + hCost;
 }
 
+public RCState clone(){
+	RCState c = new RCState(state,getgCost(),gethCost());
+	return c;
+}
 public boolean Peasant(String peasant){
 	return state.contains("Peasant(" + peasant + ")");
 }
