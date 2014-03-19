@@ -1,12 +1,32 @@
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 
 public class RCState {
 private int gCost;
 private List<String> peasants;
+public String getAction() {
+	return action;
+}
+
+public void setAction(String action) {
+	this.action = action;
+}
+
+public RCState getParent() {
+	return parent;
+}
+
+public void setParent(RCState parent) {
+	this.parent = parent;
+}
+
+public void setPeasants(List<String> peasants) {
+	this.peasants = peasants;
+}
 private String action;
 private RCState parent;
 public int getgCost() {
@@ -54,18 +74,26 @@ private int hCost;
 private List<RCState> neighbors = new LinkedList<RCState>();
 private List<String> state = new LinkedList<String>();
 
-public RCState(List<String> state, int gCost, int hCost){
+public RCState(List<String> state, int gCost, int hCost, RCState parent){
 	for(String s: state){
 		state.add(s);
 	}
 	this.gCost = gCost;
 	this.hCost = hCost;
 	fCost = gCost + hCost;
+	this.parent = parent;
 }
+	public boolean isGoal(int wood, int gold){
+		for(String s: state)
+			if(s.equalsIgnoreCase("Wood(" + wood + ",t1)"))
+				for(String s2: state)
+					if(s2.equalsIgnoreCase("Gold(" + gold + ",t1)"))
+						return true;
 
+		return false;
+	}
 public RCState clone(){
-	RCState c = new RCState(state,getgCost(),gethCost());
-	c.setParent(this)
+	RCState c = new RCState(state,getgCost(),0,this);
 
 	return c;
 }
@@ -120,6 +148,15 @@ public List<String> getPeasants(){
 			peasants.add(s.substring(s.indexOf('('),s.indexOf(')')));
 
 	}
+	return peasants;
+}
+
+public List<String> getTownhalls(){
+	List<String> townhalls = new LinkedList<String>();
+	for(String s:state)
+		if(s.contains("Townhall("))
+			townhalls.add(s.substring(s.indexOf('('),s.indexOf(')')));
+	return townhalls;
 }
 public boolean HarvestWood(String unit){
 	if(Peasant(unit) && Near("f",unit) && EmptyHanded(unit) && Idle(unit))
@@ -131,7 +168,7 @@ public boolean HarvestWood(String unit){
 	return false;
 }
 
-public boolean HarvestGold(String mine, String unit){
+public boolean HarvestGold(String unit){
 	if(Peasant(unit) && Near("g",unit) && EmptyHanded(unit) && Idle(unit))
 	{
 		state.remove("Holding(nil," + unit);
@@ -190,6 +227,7 @@ public boolean GoNear(String peasant, String unit){
 	else
 		return false;
 }
+
 
 
 }

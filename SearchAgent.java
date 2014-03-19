@@ -254,7 +254,6 @@ public class SearchAgent extends Agent {
 				footmanView = u;
 		}
 	}
-
 	/**
 	 * Checks to see if the node is within 1 space of the goal
 	 * 

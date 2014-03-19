@@ -2,9 +2,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +37,7 @@ public class RCAgent extends Agent {
 	private int goldRequired;
 	private int woodRequired;
 	private List<String> peasants = new LinkedList<String>();
+	private List<String> townhalls = new LinkedList<String>();
 	
 	private int step;
 	
@@ -45,201 +49,8 @@ public class RCAgent extends Agent {
 	}
 
 	StateView currentState;
+
 	
-	/**
-	 * This takes all of the players peasants and makes them collect gold
-	 * 
-	 * @param peasantIDs
-	 *            the list of the players peasants
-	 * @param townHallIDs
-	 *            the list of the townhalls to transfer the gold to
-	 * @param builder
-	 *            the list of integer to action to tell the peasants to collect
-	 *            gold
-	 */
-	private void collectGold(List<Integer> peasantIDs,
-			List<Integer> townHallIDs, Map<Integer, Action> builder) {
-
-		for (int peasantId : peasantIDs) {
-			int townHallId = townHallIDs.get(0);
-			Action b = null;
-			if (currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD
-					&& currentState.getUnit(peasantId).getCargoAmount() > 0)
-				b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT,
-						townHallId);
-			else {
-				List<Integer> resourceIDs = currentState
-						.getResourceNodeIds(Type.GOLD_MINE);
-				b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER,
-						resourceIDs.get(0));
-			}
-			builder.put(peasantId, b);
-		}
-
-	}
-	
-	/**
-	 * This takes all of the players peasants and makes them collect wood
-	 * 
-	 * @param peasantIDs
-	 *            the list of the players peasants
-	 * @param townHallIDs
-	 *            the list of the townhalls to transfer the wood to
-	 * @param builder
-	 *            the list of integer to action to tell the peasants to collect
-	 *            wood
-	 */
-	private void collectWood(List<Integer> peasantIDs,
-			List<Integer> townHallIDs, Map<Integer, Action> builder) {
-		for (int peasantId : peasantIDs) {
-			int townHallId = townHallIDs.get(0);
-			Action b = null;
-			if (currentState.getUnit(peasantId).getCargoAmount() > 0)
-				b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT,
-						townHallId);
-			else {
-				List<Integer> resourceIDs = currentState
-						.getResourceNodeIds(Type.TREE);
-				b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER,
-						resourceIDs.get(0));
-			}
-			builder.put(peasantId, b);
-		}
-	}
-
-	/**
-	 * Puts of all the players units in lists as well as all of the enemy units
-	 * 
-	 * @param peasantIDs
-	 *            the list that the peasants ids will go into
-	 * @param townHallIDs
-	 *            the list that the townhall ids will go into
-	 * @param farmIDs
-	 *            the list that the farm ids will go into
-	 * @param barracksIDs
-	 *            the list that the barracks ids will go into
-	 * @param footmanIDs
-	 *            the list that the footman ids will go into
-	 * @param enemyUnits
-	 *            the list that the enemy units will go into
-	 */
-	private void getIDs(List<Integer> peasantIDs, List<Integer> townHallIDs,
-			List<Integer> farmIDs, List<Integer> barracksIDs,
-			List<Integer> footmanIDs, List<Integer> enemyUnits) {
-		List<Integer> allUnitIDs = currentState.getAllUnitIds();
-		List<Integer> myUnits = currentState.getUnitIds(playernum);
-		for (int i = 0; i < allUnitIDs.size(); i++) {
-			int id = allUnitIDs.get(i);
-			UnitView unit = currentState.getUnit(id);
-			String unitTypeName = unit.getTemplateView().getName();
-			if (unitTypeName.equals("TownHall") && myUnits.contains(id))
-				townHallIDs.add(id);
-			else if (unitTypeName.equals("Peasant") && myUnits.contains(id))
-				peasantIDs.add(id);
-			else if (unitTypeName.equals("Farm") && myUnits.contains(id))
-				farmIDs.add(id);
-			else if (unitTypeName.equals("Barracks") && myUnits.contains(id))
-				barracksIDs.add(id);
-			else if (unitTypeName.equals("Footman") && myUnits.contains(id))
-				footmanIDs.add(id);
-			else
-				enemyUnits.add(id);
-		}
-
-	}
-
-	/**
-	 * Creates a structure from a given template id for that structure
-	 * 
-	 * @param peasantID
-	 *            the peasant to build the structure
-	 * @param templateID
-	 *            the template of the structure to build
-	 * @param builder
-	 *            the map to create the action
-	 */
-	public void buildStructure(int peasantID, int templateID,
-			Map<Integer, Action> builder) {
-		builder.put(peasantID,
-				Action.createPrimitiveBuild(peasantID, templateID));
-	}
-
-	/**
-	 * Creates a unit given a unit and building id
-	 * 
-	 * @param buildingID
-	 *            the building id to create the unit from
-	 * @param unitID
-	 *            the id of the unit to create
-	 * @param builder
-	 *            the map to create the action
-	 */
-	private void createUnit(int buildingID, int unitID,
-			Map<Integer, Action> builder) {
-		builder.put(buildingID,
-				Action.createCompoundProduction(buildingID, unitID));
-
-	}
-
-	/**
-	 * This is a complicated function that will collect resouces until it can
-	 * build/create what it is told to
-	 * 
-	 * @param peasantID
-	 *            the id of the peasant to build if it is building a structure
-	 * @param buildingID
-	 *            the building to create the unit
-	 * @param structure
-	 *            the structure to build if building
-	 * @param peasantIDs
-	 *            the list of the peasats to collect resouces
-	 * @param townHallIDs
-	 *            the list of the townhalls to return the resources to
-	 * @param builder
-	 *            the map of actions to queue the actions
-	 * @param currentGold
-	 *            the current gold of the player
-	 * @param currentWood
-	 *            the current wood of the player
-	 * @param building
-	 *            if the person is building a structure or creating a unit, true
-	 *            if building, false if structure
-	 */
-	private void collectResourcesAndBuild(int peasantID, int buildingID,
-			String structure, List<Integer> peasantIDs,
-			List<Integer> townHallIDs, Map<Integer, Action> builder,
-			int currentGold, int currentWood, boolean building) {
-		TemplateView structureTemplate = currentState.getTemplate(playernum,
-				structure);
-		if (currentWood < structureTemplate.getWoodCost())
-			collectWood(peasantIDs, townHallIDs, builder);
-		else if (currentGold < structureTemplate.getGoldCost())
-			collectGold(peasantIDs, townHallIDs, builder);
-		else {
-			if (building)
-				buildStructure(peasantID, structureTemplate.getID(), builder);
-			else
-				createUnit(buildingID, structureTemplate.getID(), builder);
-		}
-
-	}
-
-	/**
-	 * Makes one unit attack another
-	 * 
-	 * @param attackingUnit
-	 *            the unit making the attack
-	 * @param unitToAttacke
-	 *            unit being attacked
-	 * @param builder
-	 *            the builder to map the actions to
-	 */
-	private void attackUnit(int attackingUnit, int unitToAttack,
-			Map<Integer, Action> builder) {
-		builder.put(attackingUnit,
-				Action.createCompoundAttack(attackingUnit, unitToAttack));
-	}
-
 
 	public List<String> getInitial(){
 		List<String> initial = new LinkedList<String>();
@@ -254,10 +65,50 @@ public class RCAgent extends Agent {
 		
 	}
 
-	public List<RCState> getNeighbors(RCState state){
+	public void setNeighbors(RCState state){
 		List<RCState> neighbors = new LinkedList<RCState>();
-		RCState s = state.clone()
-		if(s.HarvestWood)
+		for(String p: peasants){
+			RCState s = state.clone();
+			if(s.HarvestWood(p)){
+				s.setAction("HarvestWood(" + p + ")");
+				neighbors.add(s);
+			}
+			RCState s2 = state.clone();
+			if(s2.HarvestGold(p)){
+				s2.setAction("HarvestGold("+ p + ")");
+				neighbors.add(s2);
+			}
+			RCState s3 = state.clone();
+			if(s3.DepositWood("t1",p)){
+				s3.setAction("DepositWood(" + p + ")");
+				neighbors.add(s3);
+			}
+			RCState s4 = state.clone();
+			if(s4.DepositGold("t1",p)){
+				s4.setAction("DepositGold(" + p + ")");
+				neighbors.add(s4);
+			}
+			RCState s5 = state.clone();
+			if(s5.GoNear("g",p)){
+				s5.setAction("GoNear(g," + p + ")");
+				neighbors.add(s5);
+			}
+			RCState s6 = state.clone();
+			if(s6.GoNear("w",p)){
+				s6.setAction("GoNear(w," + p + ")");
+				neighbors.add(s6);
+			}
+			RCState s7 = state.clone();
+			if(s7.GoNear("t1",p)){
+				s7.setAction("GoNear(t1," + p + ")");
+				neighbors.add(s7);
+			}
+
+		}
+		for(RCState s : neighbors){
+			heuristic(s);
+		}
+		state.setNeighbors(neighbors);
 	}
 	public List<String> goal(int wood,int gold){
 	 List<String> goal = new LinkedList<String>();
@@ -265,6 +116,16 @@ public class RCAgent extends Agent {
 	 goal.add("Wood(" + wood + ",t1)");
 	 return goal;
 	}
+
+	public LinkedList<String> backTrace(RCState n) {
+		LinkedList<String> backtrace = new LinkedList<String>();
+		while (n.getParent() != null) {
+			backtrace.addFirst(n.getAction());
+			n = n.getParent();
+		}
+		return backtrace;
+	}
+
 	@Override
 	public Map<Integer, Action> initialStep(StateView newstate, History.HistoryView statehistory) {
 		step = 0;
@@ -344,7 +205,7 @@ public class RCAgent extends Agent {
 		return builder;
 	}
 
-	public int heuristic(RCState state)
+	public void heuristic(RCState state)
 	{
 		int cost = 0;
 		int currentWood =state.getWood("t1");
@@ -353,10 +214,10 @@ public class RCAgent extends Agent {
 		int goldDifference = goldRequired - currentGold;
 		cost+= woodDifference;
 		cost+=goldDifference;
-		if(woodDifference && goldDifference <= 0){
+		if(woodDifference <= 0 && goldDifference <= 0){
 			state.sethCost(0);
-			state.setgCost(state.getgCost() + 1)
-			state.setfCost(state.getgCost() + state.gethCost())
+			state.setgCost(state.getgCost() + 1);
+			state.setfCost(state.getgCost() + state.gethCost());
 			return;
 		}
 		if(state.isNear("p1","g") &&  state.HoldingWood("p1") )
@@ -369,8 +230,8 @@ public class RCAgent extends Agent {
 			cost+= 10000;
 
 			state.sethCost(cost);
-			state.setgCost(state.getgCost() + 1)
-			state.setfCost(state.getgCost() + state.gethCost())
+			state.setgCost(state.getgCost() + 1);
+			state.setfCost(state.getgCost() + state.gethCost());
 
 	}
 	
@@ -387,11 +248,9 @@ public class RCAgent extends Agent {
 	 *            the current list of open nodes
 	 * @return true if the node is more optimal or false if it is not
 	 */
-	private boolean checkOpenList(Node neighbor, PriorityQueue<Node> openList) {
-		for (Node check : openList) {
-			if (check.getX() == neighbor.getX()
-					&& check.getY() == neighbor.getY()
-					&& neighbor.getfCost() > check.getfCost())
+	private boolean checkOpenList(RCState neighbor, PriorityQueue<RCState> openList) {
+		for (RCState check : openList) {
+			if (sameState(neighbor,check) &&  neighbor.getfCost() > check.getfCost())
 				return true;
 		}
 		return false;
@@ -409,16 +268,33 @@ public class RCAgent extends Agent {
 	 *            the current list of closed nodes
 	 * @return true if the node is more optimal or false if it is not
 	 */
-	private boolean checkClosedList(Node neighbor, List<Node> closedList) {
-		for (Node check : closedList) {
-			if (check.getX() == neighbor.getX()
-					&& check.getY() == neighbor.getY()
-					&& neighbor.getfCost() > check.getfCost())
+	private boolean checkClosedList(RCState neighbor, List<RCState> closedList) {
+		for (RCState check : closedList) {
+			if (sameState(neighbor,check) && neighbor.getfCost() > check.getfCost())
 				return true;
 		}
 		return false;
 	}
 
+	private boolean sameState(RCState one, RCState two){
+		Set<String> mapOne = new HashSet<String>();
+		Set<String> mapTwo = new HashSet<String>();
+		for(String s: one.getState()){
+			mapOne.add(s);
+		}
+		for(String s: two.getState()){
+			mapTwo.add(s);
+		}
+		for(String s:one.getState()){
+			if(!mapTwo.contains(s))
+				return false;
+		}
+		for(String s:two.getState()){
+			if(!mapOne.contains(s))
+				return false;
+		}
+return true;
+	}
 	/**
 	 * Computes the path using the A* algorithm f(n) = g(n) + h(n) where g(n) is
 	 * the total cost up to that point and h(n) is the cost to the path to a
@@ -436,19 +312,18 @@ public class RCAgent extends Agent {
 	 *            the unit view of the starting unit
 	 * @return
 	 */
-	private LinkedList<Node> path(StateView state, Unit.UnitView start) {
-		NodeComparator compare = new NodeComparator();
-		PriorityQueue<Node> openList = new PriorityQueue<Node>(10, compare);
-		List<Node> closedList = new LinkedList<Node>();
-		Node startNode = new Node(start.getXPosition(), start.getYPosition(),
-				0, 0, null);
+	private LinkedList<String> path(StateView state) {
+		RCStateComparator compare = new RCStateComparator();
+		PriorityQueue<RCState> openList = new PriorityQueue<RCState>(10, compare);
+		List<RCState> closedList = new LinkedList<RCState>();
+		RCState startNode = new RCState(getInitial(),0,0,null);
 		openList.add(startNode);
 		while (!openList.isEmpty()) {
-			Node temp = openList.poll();
-			setNeighbors(temp, state);
-			for (Node neighbor : temp.getNeighbors()) {
+			RCState temp = openList.poll();
+			setNeighbors(temp);
+			for (RCState neighbor : temp.getNeighbors()) {
 				boolean skip = false;
-				if (goal(neighbor)) {
+				if (neighbor.isGoal(woodRequired,goldRequired)) {
 					return backTrace(neighbor);
 				}
 				skip = checkClosedList(neighbor, closedList)
