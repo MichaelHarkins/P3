@@ -7,7 +7,8 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 public class RCState {
 private int gCost;
 private List<String> peasants;
-
+private String action;
+private RCState parent;
 public int getgCost() {
 	return gCost;
 }
@@ -64,6 +65,8 @@ public RCState(List<String> state, int gCost, int hCost){
 
 public RCState clone(){
 	RCState c = new RCState(state,getgCost(),gethCost());
+	c.setParent(this)
+
 	return c;
 }
 public boolean Peasant(String peasant){
@@ -75,14 +78,6 @@ public boolean Townhall(String townhall){
 }
 public boolean Idle(String peasant){
 	return state.contains("Idle(" + peasant + ")");
-}
-
-public boolean Mine(String mine){
-	return state.contains("Mine(" + mine + ")");
-	
-}
-public boolean Forest(String forest){
-	return state.contains("Forest(" + forest + ")");
 }
 
 public boolean EmptyHanded(String unit){
@@ -118,35 +113,28 @@ public int getGold(String mine){
 	return 0;
 }
 
-public boolean HarvestWood(String forest, String unit){
-	if(Forest(forest) && Peasant(unit) && Near(forest,unit) && EmptyHanded(unit) && Idle(unit))
+public List<String> getPeasants(){
+	List<String> peasants = new LinkedList<String>();
+	for(String s: state){
+		if(s.contains("Peasant("))
+			peasants.add(s.substring(s.indexOf('('),s.indexOf(')')));
+
+	}
+}
+public boolean HarvestWood(String unit){
+	if(Peasant(unit) && Near("f",unit) && EmptyHanded(unit) && Idle(unit))
 	{
-		state.remove("Peasant(" + unit + ")");
 		state.remove("Holding(nil," + unit);
-		int currentWood = getWood(forest);
-		state.remove("Wood("+currentWood + ")");
-		currentWood-= 100;
-		if(currentWood == 0){
-			state.remove("Forest(" + forest + ")");
-		}
-		else
-			state.add("Wood(" +currentWood + ")");
+		state.add("Holding(g,"  + unit  + ")");
 		return true;
 	}
 	return false;
 }
 
 public boolean HarvestGold(String mine, String unit){
-	if(Mine(mine) && Peasant(unit) && Near(mine,unit) && EmptyHanded(unit) && Idle(unit))
+	if(Peasant(unit) && Near("g",unit) && EmptyHanded(unit) && Idle(unit))
 	{
 		state.remove("Holding(nil," + unit);
-		int currentGold = getGold(mine);
-		state.remove("Gold("+currentGold + ")");
-		currentGold-= 100;
-		if(currentGold == 0)
-			state.remove("Mine(" + mine + ")");
-		else
-			state.add("Gold(" +currentGold + ")");
 		state.add("Holding(g," + unit + ")");
 		return true;
 	}
@@ -157,9 +145,9 @@ public boolean DepositGold(String townhall,String unit){
 	if(Peasant(unit) && Townhall(townhall) && Near(townhall,unit) && HoldingGold(unit) && Idle(unit) ){
 		state.remove("Holding(g," + unit + ")");
 		int currentGold = getGold(townhall);
-		state.remove("Gold(" + currentGold + ")");
+		state.remove("Gold(" + currentGold +  "," + townhall + ")");
 		currentGold+= 100;
-		state.add("Gold(" + currentGold + ")");
+		state.add("Gold(" + currentGold +  "," + townhall + ")");
 		return true;
 	}
 	else
@@ -170,9 +158,9 @@ public boolean DepositWood(String townhall,String unit){
 	if(Peasant(unit) && Townhall(townhall) && Near(townhall,unit) && HoldingWood(unit) && Idle(unit) ){
 		state.remove("Holding(w," + unit + ")");
 		int currentWood = getWood(townhall);
-		state.remove("Wood(" + currentWood + ")");
+		state.remove("Wood(" + currentWood +  "," + townhall + ")");
 		currentWood+= 100;
-		state.add("Wood(" + currentWood + ")");
+		state.add("Wood(" + currentWood +  "," + townhall + ")");
 		return true;
 	}
 	else
@@ -202,27 +190,6 @@ public boolean GoNear(String peasant, String unit){
 	else
 		return false;
 }
-private void set( String condition )
-{
-    state.add( condition );
-}
-private void increasePeasants(  )
-{
-	String p = "p"+(peasants.size()+1);
-	peasants.add(p);
-	set("Peasant("+p+")");
-	set("Idle("+p+")");
-	set("EmptyHanded("+p+")");
-	set("Near("+p+","+"T"+")");
-	set("Holding("+p+",W,0)");
-	set("Holding("+p+",G,0)");
-	String ps = "----increasePeasnats----\n";
-	for(int i = 0; i < peasants.size(); i++)
-	{
-		ps += "Peasant "+ i + ": "+peasants.get(i)+"\n";
-	}
-	//System.out.println(ps);
-    //numGetSet("Peasants(", 1);
-}
+
 
 }

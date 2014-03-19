@@ -33,6 +33,7 @@ public class RCAgent extends Agent {
 
 	private int goldRequired;
 	private int woodRequired;
+	private List<String> peasants = new LinkedList<String>();
 	
 	private int step;
 	
@@ -251,6 +252,12 @@ public class RCAgent extends Agent {
 		initial.add("Wood(0,t1)");
 		return initial;
 		
+	}
+
+	public List<RCState> getNeighbors(RCState state){
+		List<RCState> neighbors = new LinkedList<RCState>();
+		RCState s = state.clone()
+		if(s.HarvestWood)
 	}
 	public List<String> goal(int wood,int gold){
 	 List<String> goal = new LinkedList<String>();
