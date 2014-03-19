@@ -367,6 +367,95 @@ public class RCAgent extends Agent {
 
 	}
 	
+	/**
+	 * This checks a node with a priortyqueue to see that when there are two
+	 * nodes that are in the same position that the f cost of the node is less
+	 * than the cost of the node in the open list. if that cost is less than we
+	 * want to add that node to the open list because it might be a more optimal
+	 * path
+	 * 
+	 * @param neighbor
+	 *            the node to check with every node in the open list
+	 * @param openList
+	 *            the current list of open nodes
+	 * @return true if the node is more optimal or false if it is not
+	 */
+	private boolean checkOpenList(Node neighbor, PriorityQueue<Node> openList) {
+		for (Node check : openList) {
+			if (check.getX() == neighbor.getX()
+					&& check.getY() == neighbor.getY()
+					&& neighbor.getfCost() > check.getfCost())
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * This checks a node with a list to see that when there are two nodes that
+	 * are in the same position that the f cost of the node is less than the
+	 * cost of the node in the closed list. if that cost is less than we want to
+	 * add that node to the open list because it might be a more optimal path
+	 * 
+	 * @param neighbor
+	 *            the node to check with every node in the closed list
+	 * @param closedList
+	 *            the current list of closed nodes
+	 * @return true if the node is more optimal or false if it is not
+	 */
+	private boolean checkClosedList(Node neighbor, List<Node> closedList) {
+		for (Node check : closedList) {
+			if (check.getX() == neighbor.getX()
+					&& check.getY() == neighbor.getY()
+					&& neighbor.getfCost() > check.getfCost())
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Computes the path using the A* algorithm f(n) = g(n) + h(n) where g(n) is
+	 * the total cost up to that point and h(n) is the cost to the path to a
+	 * neighboring node. It creates a open list and close list of nodes. The
+	 * starting node is opened and its neighbors are checked It sees if that
+	 * neighbor is the goal and if it is, it returns the path to that node. If
+	 * it is not the goal it checks to see if it has already been traversed or
+	 * its path is not optimal. If the path is optimal it adds that node to the
+	 * open list. It keeps checking nodes until it eventually finds a path to
+	 * the goal or it finds that there is no path to the goal and returns null.
+	 * 
+	 * @param state
+	 *            the state of the map
+	 * @param start
+	 *            the unit view of the starting unit
+	 * @return
+	 */
+	private LinkedList<Node> path(StateView state, Unit.UnitView start) {
+		NodeComparator compare = new NodeComparator();
+		PriorityQueue<Node> openList = new PriorityQueue<Node>(10, compare);
+		List<Node> closedList = new LinkedList<Node>();
+		Node startNode = new Node(start.getXPosition(), start.getYPosition(),
+				0, 0, null);
+		openList.add(startNode);
+		while (!openList.isEmpty()) {
+			Node temp = openList.poll();
+			setNeighbors(temp, state);
+			for (Node neighbor : temp.getNeighbors()) {
+				boolean skip = false;
+				if (goal(neighbor)) {
+					return backTrace(neighbor);
+				}
+				skip = checkClosedList(neighbor, closedList)
+						|| checkOpenList(neighbor, openList);
+				if (!skip)
+					openList.add(neighbor);
+			}
+			closedList.add(temp);
+		}
+
+		return null;
+
+	}
+
 	
 	@Override
 	public void terminalStep(StateView newstate, History.HistoryView statehistory) {
