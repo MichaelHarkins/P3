@@ -245,22 +245,6 @@ public class RCAgent extends Agent {
 		initial.add("Peasant(p1)");
 		initial.add("Idle(p1)");
 		initial.add("Townhall(t1)");
-		initial.add("Mine(g1)");
-		initial.add("Gold(100,g1)");
-		initial.add("Mine(g2)");
-		initial.add("Gold(500,g2)");
-		initial.add("Mine(g3)");
-		initial.add("Gold(5000,g3)");
-		initial.add("Forest(f1)");
-		initial.add("Wood(400,f1)");
-		initial.add("Forest(f2)");
-		initial.add("Wood(400,f2)");
-		initial.add("Forest(f3)");
-		initial.add("Wood(400,f3)");
-		initial.add("Forest(f4)");
-		initial.add("Wood(400,f4)");
-		initial.add("Forest(f5)");
-		initial.add("Wood(400,f5)");
 		initial.add("Holding(nil,p1)");
 		initial.add("Near(t1,p1)");
 		initial.add("Gold(0,t1)");
@@ -353,9 +337,34 @@ public class RCAgent extends Agent {
 		return builder;
 	}
 
-	public void heuristic()
+	public int heuristic(RCState state)
 	{
-		
+		int cost = 0;
+		int currentWood =state.getWood("t1");
+		int currentGold = state.getGold("t1");
+		int woodDifference = woodRequired - currentWood;
+		int goldDifference = goldRequired - currentGold;
+		cost+= woodDifference;
+		cost+=goldDifference;
+		if(woodDifference && goldDifference <= 0){
+			state.sethCost(0);
+			state.setgCost(state.getgCost() + 1)
+			state.setfCost(state.getgCost() + state.gethCost())
+			return;
+		}
+		if(state.isNear("p1","g") &&  state.HoldingWood("p1") )
+			cost+= 10000;
+		else if(state.isNear("p1","f") && state.HoldingGold("p1"))
+			cost+= 10000;
+		if(woodDifference == 0 && state.HoldingWood ("p1") || state.isNear("p1","f"))
+			cost+= 10000;
+		if(goldDifference == 0 && state.HoldingWood("p1") || state.isNear("p1","g"))
+			cost+= 10000;
+
+			state.sethCost(cost);
+			state.setgCost(state.getgCost() + 1)
+			state.setfCost(state.getgCost() + state.gethCost())
+
 	}
 	
 	

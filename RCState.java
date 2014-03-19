@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 
@@ -178,6 +177,13 @@ public boolean DepositWood(String townhall,String unit){
 	}
 	else
 		return false;
+}
+public boolean isNear(String peasant, String unit) {
+	for(String s: state){
+		if(s.equalsIgnoreCase("Near(" + unit + "," + peasant + ")"))
+			return true;
+	}
+	return false;
 }
 public boolean GoNear(String peasant, String unit){
 	if(Peasant(peasant)){
