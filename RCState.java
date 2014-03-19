@@ -6,14 +6,67 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 
 public class RCState {
+private int gCost;
+private List<String> peasants;
+
+public int getgCost() {
+	return gCost;
+}
+
+public void setgCost(int gCost) {
+	this.gCost = gCost;
+}
+
+public int getfCost() {
+	return fCost;
+}
+
+public void setfCost(int fCost) {
+	this.fCost = fCost;
+}
+
+public int gethCost() {
+	return hCost;
+}
+
+public void sethCost(int hCost) {
+	this.hCost = hCost;
+}
+
+public List<RCState> getNeighbors() {
+	return neighbors;
+}
+
+public void setNeighbors(List<RCState> neighbors) {
+	this.neighbors = neighbors;
+}
+
+public List<String> getState() {
+	return state;
+}
+
+public void setState(List<String> state) {
+	this.state = state;
+}
+private int fCost;
+private int hCost;
+
+private List<RCState> neighbors = new LinkedList<RCState>();
 private List<String> state = new LinkedList<String>();
 
-public RCState(List<String> state){
+public RCState(List<String> state, int gCost, int hCost){
 	for(String s: state){
 		state.add(s);
 	}
+	this.gCost = gCost;
+	this.hCost = hCost;
+	fCost = gCost + hCost;
 }
 
+public RCState clone(){
+	RCState c = new RCState(state,getgCost(),gethCost());
+	return c;
+}
 public boolean Peasant(String peasant){
 	return state.contains("Peasant(" + peasant + ")");
 }
@@ -130,6 +183,8 @@ public boolean GoNear(String peasant, String unit){
 	if(Peasant(peasant)){
 	int index = -1;
 	for(String s: state){
+		if(s.equalsIgnoreCase("Near(" + unit + "," + peasant + ")"))
+			return false;
 		if(s.contains("Near("))
 			index = state.indexOf(s);
 	}
@@ -141,4 +196,27 @@ public boolean GoNear(String peasant, String unit){
 	else
 		return false;
 }
+private void set( String condition )
+{
+    state.add( condition );
+}
+private void increasePeasants(  )
+{
+	String p = "p"+(peasants.size()+1);
+	peasants.add(p);
+	set("Peasant("+p+")");
+	set("Idle("+p+")");
+	set("EmptyHanded("+p+")");
+	set("Near("+p+","+"T"+")");
+	set("Holding("+p+",W,0)");
+	set("Holding("+p+",G,0)");
+	String ps = "----increasePeasnats----\n";
+	for(int i = 0; i < peasants.size(); i++)
+	{
+		ps += "Peasant "+ i + ": "+peasants.get(i)+"\n";
+	}
+	//System.out.println(ps);
+    //numGetSet("Peasants(", 1);
+}
+
 }

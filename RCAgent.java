@@ -353,6 +353,12 @@ public class RCAgent extends Agent {
 		return builder;
 	}
 
+	public void heuristic()
+	{
+		
+	}
+	
+	
 	@Override
 	public void terminalStep(StateView newstate, History.HistoryView statehistory) {
 		step++;
