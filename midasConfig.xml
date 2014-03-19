@@ -1,5 +1,5 @@
 <Configuration>
-	<Map>pa3/rc_3m5t.xml</Map>
+	<Map>rc_3m5t.xml</Map>
 	<Player Id="0">
 		<AgentClass>
 			<ClassName>RCAgent</ClassName>

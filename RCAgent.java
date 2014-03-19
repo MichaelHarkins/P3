@@ -129,6 +129,7 @@ public class RCAgent extends Agent {
 	@Override
 	public Map<Integer, Action> initialStep(StateView newstate, History.HistoryView statehistory) {
 		step = 0;
+		path(null);
 		return middleStep(newstate, statehistory);
 	}
 
@@ -142,67 +143,7 @@ public class RCAgent extends Agent {
 		int currentGold = currentState.getResourceAmount(0, ResourceType.GOLD);
 		int currentWood = currentState.getResourceAmount(0, ResourceType.WOOD);
 
-		List<Integer> allUnitIds = currentState.getAllUnitIds();
-		List<Integer> peasantIds = new ArrayList<Integer>();
-		List<Integer> townhallIds = new ArrayList<Integer>();
-		for(int i=0; i<allUnitIds.size(); i++) {
-			int id = allUnitIds.get(i);
-			UnitView unit = currentState.getUnit(id);
-			String unitTypeName = unit.getTemplateView().getName();
-			if(unitTypeName.equals("TownHall"))
-				townhallIds.add(id);
-			if(unitTypeName.equals("Peasant"))
-				peasantIds.add(id);
-		}
-		
-		if(peasantIds.size()>=2) {  // collect resources
-			if(currentWood<woodRequired) {
-				int peasantId = peasantIds.get(1);
-				int townhallId = townhallIds.get(0);
-				Action b = null;
-				if(currentState.getUnit(peasantId).getCargoAmount()>0)
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
-				else {
-					List<Integer> resourceIds = currentState.getResourceNodeIds(Type.TREE);
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
-				}
-				builder.put(peasantId, b);
-			}
-			if(currentGold<goldRequired) {
-				int peasantId = peasantIds.get(0);
-				int townhallId = townhallIds.get(0);
-				Action b = null;
-				if(currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD && currentState.getUnit(peasantId).getCargoAmount()>0)
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
-				else {
-					List<Integer> resourceIds = currentState.getResourceNodeIds(Type.GOLD_MINE);
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
-				}
-				builder.put(peasantId, b);
-			}
-		}
-		else {  // build peasant
-			if(currentGold>=400) {
-			
-				TemplateView peasanttemplate = currentState.getTemplate(playernum, "Peasant");
-				int peasanttemplateID = peasanttemplate.getID();
-	
-				int townhallID = townhallIds.get(0);
-				builder.put(townhallID, Action.createCompoundProduction(townhallID, peasanttemplateID));
-			} else {
-				int peasantId = peasantIds.get(0);
-				int townhallId = townhallIds.get(0);
-				Action b = null;
-				if(currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD && currentState.getUnit(peasantId).getCargoAmount()>0)
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
-				else {
-					List<Integer> resourceIds = currentState.getResourceNodeIds(Type.GOLD_MINE);
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
-				}
-				builder.put(peasantId, b);
-			}
-		}
-		return builder;
+return null;
 	}
 
 	public void heuristic(RCState state)
@@ -212,8 +153,14 @@ public class RCAgent extends Agent {
 		int currentGold = state.getGold("t1");
 		int woodDifference = woodRequired - currentWood;
 		int goldDifference = goldRequired - currentGold;
-		cost+= woodDifference;
-		cost+=goldDifference;
+if(woodDifference< 0){
+	cost+= -1*woodDifference;
+	woodDifference = 0;
+}
+if(goldDifference< 0){
+	cost+= -1*goldDifference;
+	goldDifference = 0;
+}
 		if(woodDifference <= 0 && goldDifference <= 0){
 			state.sethCost(0);
 			state.setgCost(state.getgCost() + 1);
@@ -320,6 +267,7 @@ return true;
 		openList.add(startNode);
 		while (!openList.isEmpty()) {
 			RCState temp = openList.poll();
+			peasants = temp.getPeasants();
 			setNeighbors(temp);
 			for (RCState neighbor : temp.getNeighbors()) {
 				boolean skip = false;

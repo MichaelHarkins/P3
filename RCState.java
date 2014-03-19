@@ -76,7 +76,7 @@ private List<String> state = new LinkedList<String>();
 
 public RCState(List<String> state, int gCost, int hCost, RCState parent){
 	for(String s: state){
-		state.add(s);
+		this.state.add(s);
 	}
 	this.gCost = gCost;
 	this.hCost = hCost;
@@ -93,7 +93,7 @@ public RCState(List<String> state, int gCost, int hCost, RCState parent){
 		return false;
 	}
 public RCState clone(){
-	RCState c = new RCState(state,getgCost(),0,this);
+	RCState c = new RCState(state,getgCost() + getfCost(),0,this);
 
 	return c;
 }
@@ -127,7 +127,7 @@ public boolean Near(String object, String unit){
 public int getWood(String forest){
 	for(String s: state){
 		if(s.contains("Wood") && s.contains(forest))
-			return Integer.parseInt(s.substring(s.indexOf('('),s.indexOf(',')));
+			return Integer.parseInt(s.substring(s.indexOf('(') +1,s.indexOf(',')));
 	
 	}
 	return 0;
@@ -136,7 +136,7 @@ public int getWood(String forest){
 public int getGold(String mine){
 	for(String s: state){
 		if(s.contains("Gold") && s.contains(mine))
-			return Integer.parseInt(s.substring(s.indexOf('('),s.indexOf(',')));
+			return Integer.parseInt(s.substring(s.indexOf('(') + 1,s.indexOf(',')));
 	}
 	return 0;
 }
@@ -145,7 +145,7 @@ public List<String> getPeasants(){
 	List<String> peasants = new LinkedList<String>();
 	for(String s: state){
 		if(s.contains("Peasant("))
-			peasants.add(s.substring(s.indexOf('('),s.indexOf(')')));
+			peasants.add(s.substring(s.indexOf('(') +1,s.indexOf(')')));
 
 	}
 	return peasants;
@@ -155,7 +155,7 @@ public List<String> getTownhalls(){
 	List<String> townhalls = new LinkedList<String>();
 	for(String s:state)
 		if(s.contains("Townhall("))
-			townhalls.add(s.substring(s.indexOf('('),s.indexOf(')')));
+			townhalls.add(s.substring(s.indexOf('(') +1,s.indexOf(')')));
 	return townhalls;
 }
 public boolean HarvestWood(String unit){
@@ -210,7 +210,7 @@ public boolean isNear(String peasant, String unit) {
 	}
 	return false;
 }
-public boolean GoNear(String peasant, String unit){
+public boolean GoNear(String unit, String peasant){
 	if(Peasant(peasant)){
 	int index = -1;
 	for(String s: state){
